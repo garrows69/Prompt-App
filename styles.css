@@ -1,0 +1,62 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+header {
+  background-color: var(--header-bg, #222);
+  color: var(--header-color, #fff);
+  padding: 1rem;
+  text-align: center;
+}
+
+h1, h2, h3 {
+  margin: 0.5rem 0;
+} 
+
+nav {
+  display: flex;
+  justify-content: space-around;
+}
+
+nav a {
+  color: var(--link-color, #1E90FF);
+  text-decoration: none;
+  padding: 0.5rem;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+button {
+  background-color: var(--button-bg, #1E90FF);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+button:focus {
+  outline: 2px solid var(--focus-outline, #FFD700);
+  outline-offset: 2px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  nav {
+    flex-direction: column;
+  }
+}
+
+/* Dark Mode Styles */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --header-bg: #333;
+    --header-color: #fff;
+    --link-color: #1E90FF;
+    --button-bg: #007BFF;
+    --focus-outline: #FFD700;
+  }
+}
