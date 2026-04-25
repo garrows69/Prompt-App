@@ -1,1 +1,46 @@
+Prompt Optimizer & Compiler 🚀
 
+A lightning-fast, zero-dependency vanilla JavaScript application designed to optimize raw user prompts and compile them into structured, professional agent instructions.
+
+Features
+
+Step 1: Input - Accept raw, unstructured thoughts or instructions.
+
+Step 2: Optimize - Automatically refines prompts for clarity, constraints, and conciseness using the Gemini API.
+
+Step 3: Compile - Structures the optimized prompt into a standard Agent format (Objective, Inputs, Constraints, Steps, Output).
+
+Local First - Features debounced localStorage caching so you never lose your work if you accidentally refresh or close the tab.
+
+Zero Dependencies - Built entirely with HTML, CSS, and Vanilla JS. No React, no Webpack, no bloat.
+
+Prerequisites
+
+To run this application locally, you will need:
+
+A modern web browser.
+
+A Google Gemini API Key.
+
+Installation & Setup
+
+Clone the repository:
+
+git clone [https://github.com/yourusername/prompt-optimizer.git](https://github.com/yourusername/prompt-optimizer.git)
+cd prompt-optimizer
+
+
+Configure Environment:
+
+Copy the .env.example file to .env.
+
+Add your Gemini API key.
+
+Note: Since this is a client-side application, you will need to inject this environment variable via your build tool or implement a lightweight backend proxy to secure your API key in production.
+
+Run Locally:
+Because this is a static site, you can simply open index.html in your browser, or serve it via a local development server:
+
+npx serve .
+# or
+python3 -m http.server 8000
