@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport optimized for mobile and PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Prompt Optimizer & Compiler</title>
+    
+    <!-- Link to Web Manifest for PWA Installation -->
+    <link rel="manifest" href="manifest.json">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --surface: #ffffff;
+            --background: #f3f4f6;
+            --text-main: #111827;
+            --text-muted: #4b5563;
+            --border: #d1d5db;
+            --border-focus: #3b82f6;
+            --disabled-bg: #9ca3af;
+            --disabled-text: #f3f4f6;
+            --final-surface: #f8fafc;
+            --final-border: #cbd5e1;
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+        /* Mobile-First Base Styles */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 16px;
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header & Top Actions */
+        .app-header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        .app-title {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        /* Section Cards */
+        .section {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .section.final-step {
+            background: var(--final-surface);
+            border-color: var(--final-border);
+        }
+
+        /* Typography & Accessibility */
+        label {
+            display: block;
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .step-num {
+            color: var(--primary);
+            font-weight: 800;
+            margin-right: 6px;
+        }
+
+        /* Textareas */
+        .textarea-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            /* 16px prevents auto-zoom on iOS Safari */
+            font-size: 16px; 
+            box-sizing: border-box;
+            resize: none; 
+            overflow: hidden;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background-color: var(--surface);
+        }
+
+        /* Buttons & Actions */
+        .action-row {
+            display: flex;
+            flex-direction: column;
+            margin-top: 16px;
+            gap: 12px;
+        }
+
+        .microcopy {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+        }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            /* Minimum touch target size */
+            min-height: 48px; 
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            background-color: var(--disabled-bg);
+            color: var(--disabled-text);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            width: auto;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+            color: var(--text-main);
+        }
+
+        /* Icon Buttons (Copy) */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 40px;
+            height: 40px;
+            padding: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            min-height: auto;
+        }
+
+        .copy-btn:active {
+            background: #f9fafb;
+            color: var(--primary);
+            border-color: var(--border-focus);
+            transform: scale(0.95);
+        }
+
+        .copy-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        .is-loading .spinner { display: inline-block; }
+        .is-loading .btn-text { display: none; }
+        .is-loading::after { content: 'Processing...'; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            font-size: 0.95rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.error { background-color: var(--error); }
+        .toast.success { background-color: var(--success); }
+        .toast.info { background-color: var(--text-muted); }
+
+        /* Tablet/Desktop Adjustments */
+        @media (min-width: 640px) {
+            body { padding: 24px; }
+            .app-header {
+                flex-direction: row;
+                align-items: center;
+            }
+            .action-row {
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+            }
+            button.btn-primary {
+                width: auto;
+            }
+            .microcopy {
+                margin-right: auto;
+                text-align: left;
+            }
+            #toast-container {
+                bottom: auto;
+                top: 24px;
+                left: auto;
+                right: 24px;
+                transform: none;
+                width: auto;
+            }
+            .toast {
+                transform: translateY(-20px);
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <header class="app-header">
+        <h1 class="app-title">Prompt Optimizer</h1>
+        <button id="startOverBtn" class="btn-secondary" type="button">↻ Start Over</button>
+    </header>
+
+    <main>
+        <section class="section">
+            <label for="userInput"><span class="step-num">1.</span> Original Prompt</label>
+            <div class="textarea-wrapper">
+                <textarea id="userInput" data-min-height="120" placeholder="Enter your initial raw prompt here..."></textarea>
+            </div>
+            <div class="action-row">
+                <button id="upgradeBtn" class="btn-primary" type="button">
+                    <span class="spinner"></span>
+                    <span class="btn-text">Upgrade Prompt ↓</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="section">
+            <label for="upgradedArea"><span class="step-num">2.</span> Upgraded Prompt</label>
+            <div class="textarea-wrapper">
+                <textarea id="upgradedArea" data-min-height="160" placeholder="Optimized prompt will appear here. Feel free to manually edit it before compiling..."></textarea>
+                <button class="copy-btn" id="copyUpgradedBtn" title="Copy to clipboard" type="button">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+            </div>
+            <div class="action-row">
+                <span class="microcopy">*Compiles from Step 2 (or Step 1 if empty)</span>
+                <button id="compileBtn" class="btn-primary" type="button">
+                    <span class="spinner"></span>
+                    <span class="btn-text">Compile Prompt ↓</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="section final-step">
+            <label for="outputArea"><span class="step-num">3.</span> Compiled Instructions</label>
+            <div class="textarea-wrapper">
+                <textarea id="outputArea" data-min-height="250" placeholder="Final structured agent instructions will appear here..."></textarea>
+                <button class="copy-btn" id="copyCompiledBtn" title="Copy to clipboard" type="button">
+                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        /**
+         * PWA Prompt Optimizer & Compiler
+         * Encapsulated, mobile-first, and resilient.
+         */
+        class PromptApp {
+            constructor() {
+                // System injected API key
+                this.config = {
+                    apiKey: "" 
+                };
+
+                this.elements = {
+                    inputs: [
+                        document.getElementById('userInput'),
+                        document.getElementById('upgradedArea'),
+                        document.getElementById('outputArea')
+                    ],
+                    buttons: {
+                        upgrade: document.getElementById('upgradeBtn'),
+                        compile: document.getElementById('compileBtn'),
+                        startOver: document.getElementById('startOverBtn'),
+                        copyUpgraded: document.getElementById('copyUpgradedBtn'),
+                        copyCompiled: document.getElementById('copyCompiledBtn')
+                    },
+                    toastContainer: document.getElementById('toast-container')
+                };
+
+                this.abortController = null;
+                this.init();
+            }
+
+            init() {
+                this.setupStorageAndAutoGrow();
+                this.attachEventListeners();
+            }
+
+            // --- Utilities ---
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                
+                this.elements.toastContainer.appendChild(toast);
+                
+                void toast.offsetWidth; // Trigger reflow
+                toast.classList.add('show');
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
+
+            // --- Storage & PWA State Setup ---
+            safeSetStorage(key, value) {
+                try {
+                    localStorage.setItem(key, value);
+                } catch (e) {
+                    console.warn('Storage limit reached or unavailable.', e);
+                }
+            }
+
+            autoGrow(element) {
+                element.style.height = 'auto';
+                const minHeight = parseInt(element.getAttribute('data-min-height') || '120', 10);
+                const newHeight = Math.max(element.scrollHeight, minHeight);
+                element.style.height = `${newHeight}px`;
+            }
+
+            setupStorageAndAutoGrow() {
+                this.elements.inputs.forEach(el => {
+                    const saved = localStorage.getItem(el.id);
+                    if (saved) {
+                        el.value = saved;
+                        requestAnimationFrame(() => this.autoGrow(el)); 
+                    }
+
+                    const handleStorage = this.debounce(() => {
+                        this.safeSetStorage(el.id, el.value);
+                    }, 500);
+
+                    el.addEventListener('input', () => {
+                        this.autoGrow(el);
+                        handleStorage();
+                    });
+                });
+
+                window.addEventListener('load', () => {
+                    this.elements.inputs.forEach(el => this.autoGrow(el));
+                });
+                
+                window.addEventListener('resize', () => {
+                   this.elements.inputs.forEach(el => this.autoGrow(el)); 
+                });
+            }
+
+            // --- AI API Integration ---
+            async callGemini(systemPrompt, userText) {
+                if (this.abortController) this.abortController.abort();
+                this.abortController = new AbortController();
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${this.config.apiKey}`;
+                const payload = {
+                    contents: [{ parts: [{ text: userText }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 4096 }
+                };
+
+                const retries = 5;
+
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                            signal: this.abortController.signal
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Service returned status code ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+                    } catch (error) {
+                        if (error.name === 'AbortError') throw new Error('Request cancelled');
+                        if (i === retries - 1) throw new Error('Failed to communicate with AI service. Please check your connection.');
+                        
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 500;
+                        await new Promise(res => setTimeout(res, delay));
+                    }
+                }
+            }
+
+            // --- Handlers ---
+            copyToClipboard(element) {
+                const text = element.value.trim();
+                if (!text) {
+                    this.showToast('Nothing to copy!', 'error');
+                    return;
+                }
+
+                // Fallback copying logic for universal device support
+                element.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToast('Copied to clipboard!', 'success');
+                } catch (err) {
+                    this.showToast('Failed to copy text. Please select manually.', 'error');
+                }
+                window.getSelection().removeAllRanges();
+                element.blur();
+            }
+
+            setButtonState(button, isLoading) {
+                button.disabled = isLoading;
+                if (isLoading) {
+                    button.classList.add('is-loading');
+                } else {
+                    button.classList.remove('is-loading');
+                }
+            }
+
+            async handleUpgrade() {
+                const text = this.elements.inputs[0].value.trim();
+                if (!text) {
+                    this.showToast('Please enter an initial prompt in Step 1.', 'error');
+                    this.elements.inputs[0].focus();
+                    return;
+                }
+
+                const systemInstruction = "You are a prompt optimization engine.\n- Make prompt clear and specific\n- Add constraints\n- Remove ambiguity\n- Keep it concise\nReturn ONLY improved prompt";
+                
+                this.setButtonState(this.elements.buttons.upgrade, true);
+                this.elements.buttons.compile.disabled = true; 
+                
+                try {
+                    const result = await this.callGemini(systemInstruction, text);
+                    this.elements.inputs[1].value = result.trim();
+                    this.safeSetStorage(this.elements.inputs[1].id, this.elements.inputs[1].value);
+                    this.autoGrow(this.elements.inputs[1]);
+                    this.showToast('Prompt upgraded successfully!', 'success');
+                } catch (err) {
+                    if (err.message !== 'Request cancelled') this.showToast(err.message, 'error');
+                } finally {
+                    this.setButtonState(this.elements.buttons.upgrade, false);
+                    this.elements.buttons.compile.disabled = false;
+                }
+            }
+
+            async handleCompile() {
+                const text = this.elements.inputs[1].value.trim() || this.elements.inputs[0].value.trim();
+                if (!text) {
+                    this.showToast('Please provide a valid prompt in Step 1 or Step 2.', 'error');
+                    return;
+                }
+
+                const systemInstruction = "You are an agent instruction compiler.\nReturn structured format:\n- Objective\n- Inputs\n- Constraints\n- Steps\n- Output";
+                
+                this.setButtonState(this.elements.buttons.compile, true);
+                this.elements.buttons.upgrade.disabled = true; 
+                
+                try {
+                    const result = await this.callGemini(systemInstruction, text);
+                    this.elements.inputs[2].value = result.trim();
+                    this.safeSetStorage(this.elements.inputs[2].id, this.elements.inputs[2].value);
+                    this.autoGrow(this.elements.inputs[2]);
+                    this.showToast('Instructions compiled successfully!', 'success');
+                    
+                    // Smooth scroll on mobile
+                    setTimeout(() => {
+                        this.elements.inputs[2].scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 100);
+                } catch (err) {
+                    if (err.message !== 'Request cancelled') this.showToast(err.message, 'error');
+                } finally {
+                    this.setButtonState(this.elements.buttons.compile, false);
+                    this.elements.buttons.upgrade.disabled = false;
+                }
+            }
+
+            handleStartOver() {
+                if (this.abortController) this.abortController.abort(); 
+                
+                this.elements.inputs.forEach(el => {
+                    el.value = '';
+                    localStorage.removeItem(el.id);
+                    this.autoGrow(el);
+                });
+                
+                this.showToast('Session reset successfully', 'success');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            attachEventListeners() {
+                this.elements.buttons.upgrade.addEventListener('click', () => this.handleUpgrade());
+                this.elements.buttons.compile.addEventListener('click', () => this.handleCompile());
+                this.elements.buttons.startOver.addEventListener('click', () => this.handleStartOver());
+                
+                // Touch-friendly copy buttons
+                this.elements.buttons.copyUpgraded.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.copyToClipboard(this.elements.inputs[1]);
+                });
+                this.elements.buttons.copyCompiled.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.copyToClipboard(this.elements.inputs[2]);
+                });
+            }
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            new PromptApp();
+        });
+    </script>
+</body>
+</html>
