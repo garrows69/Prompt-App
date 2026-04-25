@@ -1,5 +1,5 @@
 // api/generate.js
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body) // Pass the frontend data to Gemini
+            body: JSON.stringify(req.body) 
         });
 
         if (!response.ok) {
@@ -26,4 +26,4 @@ export default async function handler(req, res) {
         console.error('Proxy Error:', error);
         return res.status(500).json({ error: 'Failed to communicate with AI service.' });
     }
-}
+};
