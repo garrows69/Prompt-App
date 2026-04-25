@@ -243,49 +243,66 @@
                 }, 3500);
             }
 
-            // --- Logic Fixed: callGemini now includes retry logic and timeout [cite: 1415, 1434] ---
-            async callGemini(systemPrompt, userText) {
-                const userApiKey = this.elements.apiKeyInput.value.trim();
-                if (!userApiKey) throw new Error("Please enter your Gemini API key in Step 0.");
+async callGemini(systemPrompt, userText) {
+    const userApiKey = this.elements.apiKeyInput.value.trim();
+    if (!userApiKey) throw new Error("Please enter your Gemini API key in Step 0.");
 
-                if (this.abortController) this.abortController.abort();
-                this.abortController = new AbortController();
+    if (this.abortController) this.abortController.abort();
+    this.abortController = new AbortController();
 
-                // Timeout logic to prevent hanging requests [cite: 1434]
-                const timeoutId = setTimeout(() => {
-                    if (this.abortController) this.abortController.abort();
-                }, 15000);
+    const timeoutId = setTimeout(() => {
+        if (this.abortController) this.abortController.abort();
+    }, 15000);
 
-                // Switch from v1beta to v1, and use the 2026 stable model
-                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3-flash:generateContent?key=${userApiKey}`;
-                const payload = {
-                    contents: [{ parts: [{ text: userText }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: { temperature: 0.2, maxOutputTokens: 4096 }
-                };
+    // FIXED: Using v1beta and the stable gemini-1.5-flash model
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
+    
+    const payload = {
+        contents: [{ 
+            role: "user", 
+            parts: [{ text: userText }] 
+        }],
+        // This field is strictly supported in v1beta
+        systemInstruction: { 
+            parts: [{ text: systemPrompt }] 
+        },
+        generationConfig: { 
+            temperature: 0.2, 
+            maxOutputTokens: 4096 
+        }
+    };
 
-                const retries = 3;
-                for (let i = 0; i < retries; i++) {
-                    try {
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
-                            signal: this.abortController.signal
-                        });
-                        clearTimeout(timeoutId);
-                        if (!response.ok) throw new Error(`Service returned status code ${response.status}`);
-                        const data = await response.json();
-                        return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-                    } catch (error) {
-                        if (i === retries - 1) {
-                            if (error.name === 'AbortError') throw new Error('Request cancelled or timed out');
-                            throw new Error('Failed to communicate with AI service.');
-                        }
-                        await new Promise(res => setTimeout(res, Math.pow(2, i) * 1000 + Math.random() * 500));
-                    }
-                }
+    const retries = 3;
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: this.abortController.signal
+            });
+            
+            clearTimeout(timeoutId);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Improved error logging to catch quota/model issues
+                console.error("API Error Response:", data);
+                throw new Error(data.error?.message || `API Error: ${response.status}`);
             }
+
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+        } catch (error) {
+            if (i === retries - 1) {
+                if (error.name === 'AbortError') throw new Error('Request timed out.');
+                throw error;
+            }
+            // Exponential backoff
+            await new Promise(res => setTimeout(res, Math.pow(2, i) * 1000 + Math.random() * 500));
+        }
+    }
+}
 
             // --- Storage & UI Management ---
             autoGrow(element) {
