@@ -455,22 +455,23 @@
                 }, 150));
             }
 
-            // --- AI API Integration ---
-            async callGemini(systemPrompt, userText) {
-                if (this.abortController) this.abortController.abort();
-                this.abortController = new AbortController();
+    async callGemini(systemPrompt, userText) {
+        if (this.abortController) this.abortController.abort();
+            this.abortController = new AbortController();
 
-                // FIXED: 15-second timeout implemented to prevent unbounded hanging requests
-                const timeoutId = setTimeout(() => {
-                    if (this.abortController) this.abortController.abort();
-                }, 15000); 
+        const timeoutId = setTimeout(() => {
+            if (this.abortController) this.abortController.abort();
+    }, 15000); 
 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${this.config.apiKey}`;
-                const payload = {
-                    contents: [{ parts: [{ text: userText }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: { temperature: 0.2, maxOutputTokens: 4096 }
-                };
+    const url = `/api/generate`; 
+    
+    const payload = {
+        contents: [{ parts: [{ text: userText }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: { temperature: 0.2, maxOutputTokens: 4096 }
+    };
+
+}
 
                 const retries = 5;
 
