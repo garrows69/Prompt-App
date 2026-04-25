@@ -301,11 +301,19 @@
 <body>
 
     <div id="toast-container"></div>
-
-    <header class="app-header">
+<header class="app-header">
         <h1 class="app-title">Prompt Optimizer</h1>
         <button id="startOverBtn" class="btn-secondary" type="button">↻ Start Over</button>
     </header>
+
+    <section class="section" style="background-color: #e0f2fe; border-color: #bae6fd;">
+        <label for="apiKeyInput" style="font-size: 0.95rem;">Gemini API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key here..." 
+               style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-family: monospace;">
+        <p class="microcopy" style="text-align: left; margin-top: 8px;">
+            *Your key is securely saved to your local browser and never sent to our servers. Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.
+        </p>
+    </section>
 
     <main>
         <section class="section">
