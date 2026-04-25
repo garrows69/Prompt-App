@@ -256,7 +256,8 @@
                     if (this.abortController) this.abortController.abort();
                 }, 15000);
 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${userApiKey}`;
+                // Updated to the current stable production model
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`;
                 const payload = {
                     contents: [{ parts: [{ text: userText }] }],
                     systemInstruction: { parts: [{ text: systemPrompt }] },
